@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>HeyoVideo! Remote</title>
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">		
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+		
+		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://www.youtube.com/iframe_api"></script>
+		
+		<style>
+			* {
+				margin: 0px;
+				padding: 0px;
+				-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+			}
+			body {
+				background-color: #000;
+				color: #FFF;
+				font-family: Futura, “Trebuchet MS”, Arial, sans-serif;
+				overflow: hidden;
+				font-size: 115%;
+			}
+			
+			#playlistWrapper {
+				position: absolute;
+				left: calc( 50% - 25%);
+				top: 0px;
+				width: 50%;
+				min-width: 90px;
+				height: 100%;
+			}
+
+			#searchResults {
+				position: absolute;
+				top: 35px;
+				top: 35px;
+				margin: auto;
+				list-style-type: none;
+				width: 100%;
+				height: calc(100% - 35px);
+				cursor: default;
+				overflow-x: hidden;
+				overflow-y: auto;
+			}
+			#searchResults>li {
+				background-color: #000;
+				height: 50px;
+				line-height: 50px; 
+				vertical-align: middle;
+				padding-right: 10px;
+			}
+			
+			#searchBar {
+				float: left;
+				width: 90%;
+				border: none;
+				height: 35px;
+				padding-left: 5px;
+			}
+			#searchCancel {
+				height: 35px;
+				line-height: 35px;
+				float: right;
+				background-color: #FFF;
+				width: 10%;
+				margin-left: -5px;
+				color: black;
+				vertical-align: middle;
+				text-align: center;
+			}
+			.searchCancelHover:hover {
+				background-color: #EEE !important;
+				cursor: pointer;
+			}
+			#searchResults>li {
+				border-bottom: 1px solid white;
+			}
+			#searchResults>li:hover {
+				background-color: #222;
+				cursor: pointer;
+			}
+			#searchResults>li>.title {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				line-height: 25px;
+			}
+			#searchResults>li>.contentData {
+				font-size: 75%;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				line-height: 25px;
+			}
+			#searchResults>li>img {
+				height: 100%;
+				float: left;
+				margin-right: 5px;
+			}
+			
+			@media (max-width: 720px) {
+				#playlistWrapper {
+					width: 100%;
+					left: 0px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div id="playlistWrapper">
+			<input type="text" id="searchBar"  placeholder="Search on YouTube" autocomplete="off"><div id="searchCancel"></div>
+			
+			<ul id="searchResults"></ul>			
+		</div>
+		
+		<script>
+			var socket = io.connect( "http://" + window.location.host );
+			var delay = (function(){
+				var timer = 0;
+				return function(callback, ms){
+					clearTimeout (timer);
+					timer = setTimeout(callback, ms);
+				};
+			})();
+		
+			$( "#searchBar" ).on( "focus", function() {
+				$( "#searchCancel" ).text("X").addClass("searchCancelHover");
+			});
+			$( "#searchCancel" ).on( "click", function() {
+				$( "#searchCancel" ).text("").removeClass("searchCancelHover");
+				$( "#searchBar" ).val( "" );
+				$( "#searchResults" ).empty();
+			});
+			$( "#searchBar" ).on( "keyup", function() {
+				delay( function(){
+					$( "#searchResults" ).empty();
+					if( $( "#searchBar" ).val() == "" ) return;
+					$.getJSON( "https://www.googleapis.com/youtube/v3/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&q=" + $( "#searchBar" ).val() , function( queryData ) {
+						var url = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&id=";
+						$.each(queryData.items, function( i, item ) {
+							url += item.id.videoId + "%2C";
+							$( "#searchResults" ).append( "<li id='"+ item.id.videoId +"'><img src="+ item.snippet.thumbnails.default.url +"><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by <span class='channelTitle'>"+ item.snippet.channelTitle +"</span></p></li>" );
+						});
+						$.getJSON( url, function( contentData ) {
+							$.each(contentData.items, function(i, item) {
+								$( "#searchResults>#"+item.id+">.contentData" ).prepend( item.contentDetails.duration.replace("PT","").toLowerCase() +" @ "+ item.contentDetails.definition );
+							});
+						});
+					});
+				}, 250 );
+			});
+			$( "#searchResults" ).on( "click", "li", function() {
+				if( confirm( "Do you want to add this video to the playlist?\n\n'"+ $( ".title", this ).text() +"' by "+ $( ".channelTitle", this ).text() ) ) socket.emit( "cueVideo", $( this ).attr( "id" ) );
+			});
+			socket.on("addedVideo", function( id ) {
+				$( "#"+id ).remove();
+			});
+		</script>
+	</body>
+</html>

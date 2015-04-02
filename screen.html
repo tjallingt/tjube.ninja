@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>HeyoVideo! Screen</title>
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+		
+		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://www.youtube.com/iframe_api"></script>
+		
+		<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+		<style>
+			* {
+				margin: 0px;
+				padding: 0px;
+				-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+			}
+			body {
+				background-color: #000;
+				color: #FFF;
+				font-family: Futura, “Trebuchet MS”, Arial, sans-serif;
+				overflow: hidden;
+				font-size: 115%;
+			}
+			
+			#title, #subtitle {
+				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				width: 100%;
+				font-size: 150%;
+			}
+			#subtitle {
+				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
+				top: 45px;
+				left: 45px;
+				font-size: 100%;
+				color: lightgrey;
+				cursor: pointer;
+			}
+			#subtitle.playnext::before {
+				content: "\f051";
+				font: normal normal normal 14px/1 FontAwesome;
+				font-size: inherit;
+				text-rendering: auto;
+				-webkit-font-smoothing: antialiased;
+				margin-right: 10px;
+			}
+			#subtitle:hover {
+				color: white;
+			}
+			
+			#playlistWrapper {
+				position: absolute;
+				right: 0px;
+				top: 0px;
+				width: 7%;
+				min-width: 90px;
+				height: 100%;
+				opacity: 0.5;
+				
+				transition: all 250ms ease;
+			}
+			#playlistWrapper:hover {
+				width: 25%;
+				opacity: 1;
+			}
+			#playlist, #searchResults {
+				position: absolute;
+				top: 35px;
+				right: 0px;
+				list-style-type: none;
+				width: 100%;
+				height: calc(100% - 35px);
+				text-shadow: 0px 0px 20px black, 0px 0px 20px black, 0px 0px 20px black;
+				cursor: default;
+				overflow-x: hidden;
+				overflow-y: auto;
+			}
+			#playlist>li, #searchResults>li {
+				background-color: #000;
+				height: 50px;
+				line-height: 50px; 
+				vertical-align: middle;
+				padding-right: 10px;
+			}
+			
+			#playlist>li {
+				background-repeat: no-repeat;
+				background-position: center;
+				background-size: cover;
+			}
+			#playlist>li>.controls {
+				display: none;
+				font-size: 110%;
+				text-shadow: 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black;
+			}
+			#playlist>li>.controls.remove{
+				position: absolute;
+				right: 20px;
+			}
+			#playlist>li>.icon {
+				position: absolute;
+				margin-left: 5px;
+				line-height: 50px;
+			}
+			#playlist>li>.title {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: inline-block;
+				width: calc(100% - 20px);
+				padding-left: 20px;
+				opacity: 0;
+				
+				transition: opacity 0s linear 250ms;
+			}
+			#playlistWrapper:hover #playlist>li>.title {
+				opacity: 1;
+			}
+			
+			#searchBar {
+				float: left;
+				width: 90%;
+				border: none;
+				height: 35px;
+				padding-left: 5px;
+			}
+			#searchCancel {
+				height: 35px;
+				line-height: 35px;
+				float: right;
+				background-color: #FFF;
+				width: 10%;
+				margin-left: -5px;
+				color: black;
+				vertical-align: middle;
+				text-align: center;
+			}
+			#searchResults {
+				display: none;
+				background-color: black;
+				z-index: 1;
+			}
+			.searchCancelHover:hover {
+				background-color: #EEE !important;
+				cursor: pointer;
+			}
+			#searchResults>li {
+				border-bottom: 1px solid white;
+				text-shadow: none;
+			}
+			#searchResults>li:hover {
+				background-color: #222;
+				cursor: pointer;
+			}
+			#searchResults>li>.title {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				line-height: 25px;
+			}
+			#searchResults>li>.contentData {
+				font-size: 75%;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				line-height: 25px;
+			}
+			#searchResults>li>img {
+				height: 100%;
+				float: left;
+				margin-right: 5px;
+			}
+			
+			#room {
+				position: absolute;
+				bottom: 10px;
+				left: 10px;
+			}
+			
+			#progressBarWrapper {
+				position: fixed;
+				bottom: 0px;
+				width: 100%;
+				height: 20px;
+				z-index: 2;
+			}
+			#progressBar {
+				background-color: red;
+				width: 0px;
+				height: 15%;
+				position: absolute;
+				bottom: 0px;
+				
+				transition: height 0.1s linear;
+			}
+			#progressBar::after {
+				content: "";
+				width: 0px;
+				height: 100%;
+				background-color: #FFF;
+				float:right;
+				
+				transition: width 0.1s linear;
+			}
+			#progressBarWrapper:hover #progressBar {
+				height: 100%;
+			}
+			#progressBarWrapper:hover #progressBar::after {
+				width: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div id="title"></div>
+		<div id="subtitle"></div>
+		
+		<div id="player"></div>
+		
+		<div id="playlistWrapper">
+			<input type="text" id="searchBar"  placeholder="Search for videos" autocomplete="off"><div id="searchCancel"></div>
+			<ul id="searchResults"></ul>
+			<ul id="playlist"></ul>
+		</div>
+		
+		<div id="room"></div>
+		
+		<div id="progressBarWrapper">
+			<div id="progressBar"></div>
+		</div>
+		
+		<script>
+			// YouTube API code
+			var player, quality = "default", playing, searchWindowTimeout = 25000, searchWindowTimer, mouseTimer;
+			var delay = (function(){
+				var timer = 0;
+				return function(callback, ms){
+					clearTimeout (timer);
+					timer = setTimeout(callback, ms);
+				};
+			})();
+			var socket = io.connect( "http://" + window.location.host );
+			
+			function onYouTubeIframeAPIReady() {
+				player = new YT.Player( "player" , {
+					height: $( window ).height(),
+					width: $( window ).width(),
+					playerVars: {
+						controls: 0,
+						iv_load_policy: 3,
+						modestbranding: 1,
+						rel: 0,
+						showinfo: 0
+					},
+					events: {
+						"onReady": onPlayerReady,
+						"onStateChange": onPlayerStateChange,
+						"onError": onPlayerError
+					}
+				});
+			}
+			function onPlayerReady( event ) {
+				player.unMute().setVolume( 100 );
+				getPlaylistStore();
+				showTitle();
+				$( "#room" ).text( "/add/" + location.pathname.split("/")[2] );
+			}
+			function onPlayerStateChange( event ) {
+				if ( event.data == YT.PlayerState.ENDED ) playNextVideo();
+				if ( event.data == YT.PlayerState.PLAYING) {
+					showProgressBar();
+					showTitle( player.getVideoData().title );
+				}
+			}
+			function onPlayerError( event ) {
+				playNextVideo( "slow" );
+			}
+			
+			function cueVideo( id ) {
+				$.getJSON( "https://www.googleapis.com/youtube/v3/videos?part=snippet&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&id=" + id , function( data ) {
+					if( data.items.length > 0 ) {
+						var title = data.items[0].snippet.title, 
+						image = data.items[0].snippet.thumbnails.default.url;
+						if( data.items[0].snippet.thumbnails.hasOwnProperty("standard") ) image = data.items[0].snippet.thumbnails.standard.url;
+						$( "#playlist" ).append( "<li id='"+ id +"' style=\"background-image: url("+ image +")\"><p class='fa fa-sort icon controls'></p><p class='title'>"+ title +"</p><p class='icon controls remove fa fa-times'></p></li>" );
+						if( !playing ) playNextVideo();
+						else {
+							showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
+							setPlaylistStore();
+						}
+					}
+				});
+			}
+
+			function playNextVideo( duration ) {
+				duration = ( duration == "" ) ? "fast" : duration; 
+				if( $( "#playlist>li" ).length != 0 ) {
+					playing = true;
+					$( "#playlist>li" ).first().slideUp( duration, function() { 
+						player.loadVideoById( $( this ).attr( "id" ) , 0, quality );
+						$( this ).remove();
+						setPlaylistStore();
+					});
+				}
+				else {
+					player.stopVideo();
+					player.clearVideo();
+					showTitle();
+					playing = false;
+				}
+			}
+			
+			$("#playlistWrapper").bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+				if( $( this ).css( "opacity" ) == "1" ) $( "#playlist>li>.title" ).css("transition", "opacity 0s linear");
+				else $( "#playlist>li>.title" ).css("transition", "opacity 0s linear 250ms");
+			});
+			
+			$( "#playlist" ).on( "mouseenter", "li", function() {
+				$( this ).children( ".controls" ).css('display', 'inline');
+			});
+			$( "#playlist" ).on( "mouseleave", "li", function() {
+				$( this ).children( ".controls" ).css('display', 'none');
+			});
+			$( "#playlist" ).on( "click", ".remove", function() {
+				$( this ).parent().slideUp( "fast", function() { 
+					$( this ).remove(); 
+					showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
+					setPlaylistStore();
+				});
+			});
+			
+			$( "#searchBar" ).on( "focus", function() {
+				searchWindowTimer = setTimeout( searchCancel, 10000 );
+				$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
+				$( "#searchCancel" ).text("X").addClass("searchCancelHover");
+				$( "#searchResults" ).show();
+			});
+			$( "#searchBar" ).on( "keyup", function() {
+				clearTimeout( searchWindowTimer );
+				searchWindowTimer = setTimeout( searchCancel, searchWindowTimeout );
+				
+				delay( function(){
+					$( "#searchResults" ).empty();
+					if( $( "#searchBar" ).val() == "" ) return;
+					$.getJSON( "https://www.googleapis.com/youtube/v3/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&q=" + $( "#searchBar" ).val() , function( queryData ) {
+						var url = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&id=";
+						$.each(queryData.items, function( i, item ) {
+							url += item.id.videoId + "%2C";
+							$( "#searchResults" ).append( "<li id='"+ item.id.videoId +"'><img src="+ item.snippet.thumbnails.default.url +"><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by "+ item.snippet.channelTitle +"</p></li>" );
+						});
+						$.getJSON( url, function( contentData ) {
+							$.each(contentData.items, function(i, item) {
+								$( "#searchResults>#"+item.id+">.contentData" ).prepend( item.contentDetails.duration.replace("PT","").toLowerCase() +" @ "+ item.contentDetails.definition );
+							});
+						});
+					});
+				}, 250 );
+			});
+			$( "#searchResults" ).on( "click", "li", function() {
+				clearTimeout( searchWindowTimer );
+				searchWindowTimer = setTimeout( searchCancel, searchWindowTimeout );
+				cueVideo( $( this ).attr( "id" ) );
+				$( this ).slideUp( "fast" );
+			});
+			$( "#searchCancel" ).on( "click", searchCancel );
+			
+			function searchCancel() {
+				$( "#searchBar" ).val( "" ).blur();
+				$( "#playlistWrapper" ).css({width: "", opacity: ""});
+				$( "#searchCancel" ).text("").removeClass("searchCancelHover");
+				$( "#searchResults" ).fadeOut( "fast", function() {
+					$( this ).hide().empty();
+				});
+			}
+			
+			function showProgressBar() {
+				$( "#progressBar" ).width( player.getCurrentTime() / player.getDuration() * 100 + "%" );
+				if( player.getPlayerState() == YT.PlayerState.PLAYING ) setTimeout( showProgressBar, 250 ); 
+			}
+			$( "#progressBarWrapper" ).on( "click", function( e ) {
+				var posX = e.pageX - $( this ).offset().left,
+					percentage = posX / $( this ).width(),
+					time = player.getDuration() * percentage;
+					player.seekTo( time, true);
+			});
+	
+			function showTitle( title ) {
+				title = ( !title ) ? "Add a video to the playlist to begin watching!" : title;
+				if( $( "#title" ).text() != title) {
+					$( "#title" ).fadeOut( "fast", function() {
+						$( this ).text( title ).fadeIn( "slow" );
+					});
+				}
+				showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
+			}
+			function showSubTitle( subtitle ) {
+				var newSubtitle = ( !subtitle ) ? "To add videos remotely go to "+ location.host +"/add/"+ location.pathname.split("/")[2] : subtitle;
+				if( $( "#subtitle" ).text() != newSubtitle) {
+					$( "#subtitle" ).fadeOut( "fast", function() {
+						if ( subtitle ) $( this ).addClass( "playnext" );
+						else $( this ).removeClass( "playnext" );
+						$( this ).text( newSubtitle ).fadeIn( "slow" );
+					});
+				}
+			}
+			$( "#subtitle" ).on( "click", function() {
+				playNextVideo();
+			});
+			
+			$( window ).resize(function() {
+				$( "#player" ).height( $( window ).height() );
+				$( "#player" ).width( $( window ).width() );
+			});
+			
+			$( "#playlist" ).sortable({
+				start: function( event, ui ) {
+					$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
+				},
+				update: function( event, ui ) {
+					showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
+					setPlaylistStore();
+					$( "#playlistWrapper" ).css({width: "", opacity: ""});
+				},	
+				axis: "y"
+			});
+			
+			function setPlaylistStore() {
+				if( typeof( Storage ) !== "undefined" ) {
+					var playlist = [];
+					$( "#playlist>li" ).each( function(){
+						playlist.push( $( this ).attr( "id" ) );
+					});
+					sessionStorage[ location.pathname.split("/")[1] ] = JSON.stringify( playlist );
+				}
+			}
+			function getPlaylistStore() {
+				if( typeof( Storage ) !== "undefined" ) {
+					var playlist = sessionStorage[ location.pathname.split("/")[1] ];
+					if( playlist ) {
+						playlist = JSON.parse( playlist );
+						$.each(playlist, function( i, item ) {
+							cueVideo( item );
+						});
+					}
+				}
+			}
+			
+			socket.on( "cueVideo", cueVideo );
+		</script>
+	</body>
+</html>
