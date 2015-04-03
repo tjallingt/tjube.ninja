@@ -6,9 +6,7 @@
 var express = require( "express" ),
 	app = express(),
 	server = require( "http" ).Server( app ),
-	io = require( "socket.io" )( server ),
-	roomIdLength = 3,
-	roomIdRegex = "[a-z0-9]{"+roomIdLength+"}";
+	io = require( "socket.io" )( server );
 
 server.listen( 1337 );
 console.log( "server started on port 1337" );
@@ -24,12 +22,12 @@ app.get( "/", function ( req, res ) {
 });
 
 // Show public screen
-app.get( "/room/:room("+roomIdRegex+")", function ( req, res ) {
+app.get( "/room/:room([a-z0-9]{3})", function ( req, res ) {
 		res.sendFile( __dirname + "/screen.html" );
 });
 
 // Show remote screen
-app.get( "/add/:room("+roomIdRegex+")", function ( req, res ) {
+app.get( "/add/:room([a-z0-9]{3})", function ( req, res ) {
 	res.sendFile( __dirname + "/remote.html" );
 });
 
@@ -46,12 +44,12 @@ io.on( "connection", function ( socket ) {
 	});
 });
 
-// Tries 10 times to generate a unique (not currently in use) room id of a length specified by roomIdLength
+// Tries 10 times to generate a unique room id of 3 characters
 function generateUniqueRoomId() {
 	var id = "";
 	for(var i = 0; i < 10; i++) {
 		var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
-		for( var i=0; i < roomIdLength; i++ ) id += possible.charAt(Math.floor(Math.random() * possible.length));
+		for( var i=0; i < 3; i++ ) id += possible.charAt(Math.floor(Math.random() * possible.length));
 		if( !io.sockets.adapter.rooms.hasOwnProperty( id ) ) return id;
 	} 
 	return false;
