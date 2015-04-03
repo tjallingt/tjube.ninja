@@ -242,10 +242,7 @@
 		<script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
 		<script src="/perfect-scrollbar.jquery.min.js"></script>
 
-		<script>
-			$('#searchResults').perfectScrollbar();
-			$('#playlist').perfectScrollbar();
-			
+		<script>			
 			// YouTube API code
 			var player, quality = "default", playing, searchWindowTimeout = 25000, searchWindowTimer, mouseTimer;
 			var delay = (function(){
@@ -280,6 +277,8 @@
 				getPlaylistStore();
 				showTitle();
 				$( "#room" ).text( "/add/" + location.pathname.split("/")[2] );
+				$( "#searchResults" ).perfectScrollbar();
+				$( "#playlist" ).perfectScrollbar();
 			}
 			function onPlayerStateChange( event ) {
 				if ( event.data == YT.PlayerState.ENDED ) playNextVideo();
@@ -384,6 +383,7 @@
 				$( "#searchBar" ).val( "" ).blur();
 				$( "#playlistWrapper" ).css({width: "", opacity: ""});
 				$( "#searchCancel" ).text("").removeClass("searchCancelHover");
+				$( "#playlist" ).perfectScrollbar( "update" );
 				$( "#searchResults" ).fadeOut( "fast", function() {
 					$( this ).hide().empty();
 				});
