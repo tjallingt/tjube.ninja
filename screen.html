@@ -5,13 +5,15 @@
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
 		
 		<!-- JS -->
-		<script src="/socket.io/socket.io.js"></script>
-		<script src="https://www.youtube.com/iframe_api"></script>
 		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
-		
+		<script src="/perfect-scrollbar/perfect-scrollbar.jquery.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://www.youtube.com/iframe_api"></script>
+
 		<!-- CSS -->
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="/perfect-scrollbar/perfect-scrollbar.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
 		<style>
 			* {
 				margin: 0px;
@@ -184,6 +186,8 @@
 				position: absolute;
 				bottom: 10px;
 				left: 10px;
+				
+				transition: bottom 0.1s linear;
 			}
 			
 			#progressBarWrapper {
@@ -217,6 +221,9 @@
 			#progressBarWrapper:hover #progressBar::after {
 				width: 5px;
 			}
+			#progressBarWrapper:hover + #room {
+				bottom: 20px;
+			}
 		</style>
 	</head>
 	<body>
@@ -232,22 +239,35 @@
 			<ul id="playlist"></ul>
 		</div>
 		
-		<div id="room"></div>
-		
 		<div id="progressBarWrapper">
 			<div id="progressBar"></div>
 		</div>
+		
+		<div id="room"></div>
 
 		<script>			
 			// YouTube API code
-			var player, quality = "default", playing, searchWindowTimeout = 25000, searchWindowTimer, mouseTimer;
-			var delay = (function(){
+			var player, 
+				quality = "default", 
+				playing, 
+				searchWindowTimeout = 25000; 
+			
+			var searchWindowDelay = (function(){
 				var timer = 0;
 				return function(callback, ms){
 					clearTimeout (timer);
 					timer = setTimeout(callback, ms);
 				};
 			})();
+			
+			var searchDelay = (function(){
+				var timer = 0;
+				return function(callback, ms){
+					clearTimeout (timer);
+					timer = setTimeout(callback, ms);
+				};
+			})();
+			
 			var socket = io.connect( "http://" + window.location.host );
 			
 			function onYouTubeIframeAPIReady() {
@@ -274,6 +294,8 @@
 				getPlaylistStore();
 				showTitle();
 				$( "#room" ).text( "/add/" + location.pathname.split("/")[2] );
+				$( "#playlist" ).perfectScrollbar();
+				$( "#searchResults" ).perfectScrollbar();
 			}
 			
 			function onPlayerStateChange( event ) {
@@ -342,17 +364,16 @@
 			});
 			
 			$( "#searchBar" ).on( "focus", function() {
-				clearTimeout( searchWindowTimer );
-				searchWindowTimer = setTimeout( searchCancel, searchWindowTimeout );
+				searchWindowDelay( searchCancel, searchWindowTimeout );
 				$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
 				$( "#searchCancel" ).text("X").addClass("searchCancelHover");
 				$( "#searchResults" ).show();
 			});
+			
 			$( "#searchBar" ).on( "keyup", function() {
-				clearTimeout( searchWindowTimer );
-				searchWindowTimer = setTimeout( searchCancel, searchWindowTimeout );
+				searchWindowDelay( searchCancel, searchWindowTimeout );
 				
-				delay( function(){
+				searchDelay( function(){
 					$( "#searchResults" ).empty();
 					if( $( "#searchBar" ).val() == "" ) return;
 					$.getJSON( "https://www.googleapis.com/youtube/v3/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&q=" + $( "#searchBar" ).val() , function( queryData ) {
@@ -366,15 +387,18 @@
 								$( "#searchResults>#"+item.id+">.contentData" ).prepend( item.contentDetails.duration.replace("PT","").toLowerCase() +" @ "+ item.contentDetails.definition );
 							});
 						});
+						$( "#searchResults" ).perfectScrollbar( "update" );
 					});
 				}, 250 );
 			});
+			
 			$( "#searchResults" ).on( "click", "li", function() {
-				clearTimeout( searchWindowTimer );
-				searchWindowTimer = setTimeout( searchCancel, searchWindowTimeout );
+				searchWindowDelay( searchCancel, searchWindowTimeout );
 				cueVideo( $( this ).attr( "id" ) );
+				$( "#searchResults" ).perfectScrollbar( "update" );
 				$( this ).slideUp( "fast" );
 			});
+			
 			$( "#searchCancel" ).on( "click", searchCancel );
 			
 			function searchCancel() {
