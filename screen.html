@@ -3,13 +3,11 @@
 	<head>
 		<title>HeyoVideo! Screen</title>
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
-		
-		<!-- JS -->
-		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-		<script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
-		<script src="/perfect-scrollbar/perfect-scrollbar.jquery.min.js"></script>
-		<script src="/socket.io/socket.io.js"></script>
-		<script src="https://www.youtube.com/iframe_api"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta charset="utf-8">
+		<meta name="description" content="Videoapp screen, play videos added with the remote.">
+		<meta name="author" content="tjallingt">
 
 		<!-- CSS -->
 		<link rel="stylesheet" href="/perfect-scrollbar/perfect-scrollbar.min.css">
@@ -244,7 +242,14 @@
 		</div>
 		
 		<div id="room"></div>
-
+		
+		
+		<!-- JS -->
+		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.2/jquery-ui.min.js"></script>
+		<script src="/perfect-scrollbar/perfect-scrollbar.jquery.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://www.youtube.com/iframe_api"></script>
 		<script>			
 			// YouTube API code
 			var player, 
@@ -333,6 +338,7 @@
 					$( "#playlist>li" ).first().slideUp( duration, function() { 
 						player.loadVideoById( $( this ).attr( "id" ) , 0, quality );
 						$( this ).remove();
+						$( "#playlist" ).perfectScrollbar( "update" );
 						setPlaylistStore();
 					});
 				}
@@ -395,8 +401,9 @@
 			$( "#searchResults" ).on( "click", "li", function() {
 				searchWindowDelay( searchCancel, searchWindowTimeout );
 				cueVideo( $( this ).attr( "id" ) );
-				$( "#searchResults" ).perfectScrollbar( "update" );
-				$( this ).slideUp( "fast" );
+				$( this ).slideUp( "fast", function() {
+					$( "#searchResults" ).perfectScrollbar( "update" );
+				});
 			});
 			
 			$( "#searchCancel" ).on( "click", searchCancel );
