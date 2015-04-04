@@ -252,11 +252,13 @@
 		<script src="https://www.youtube.com/iframe_api"></script>
 		<script>			
 			// YouTube API code
-			var player, 
+			var apiKey = "AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY",
+				apiUrl = "https://www.googleapis.com/youtube/v3",
+				youtube = {}, 
 				quality = "default", 
-				playing, 
-				searchWindowTimeout = 25000; 
-			
+				playing = false,
+				searchWindowTimeout = 25000;
+			var socket = io.connect( window.location.origin );
 			var searchWindowDelay = (function(){
 				var timer = 0;
 				return function(callback, ms){
@@ -264,7 +266,6 @@
 					timer = setTimeout(callback, ms);
 				};
 			})();
-			
 			var searchDelay = (function(){
 				var timer = 0;
 				return function(callback, ms){
@@ -273,10 +274,8 @@
 				};
 			})();
 			
-			var socket = io.connect( "http://" + window.location.host );
-			
 			function onYouTubeIframeAPIReady() {
-				player = new YT.Player( "player" , {
+				youtube = new YT.Player( "player" , {
 					height: $( window ).height(),
 					width: $( window ).width(),
 					playerVars: {
@@ -295,7 +294,7 @@
 			}
 			
 			function onPlayerReady( event ) {
-				player.unMute().setVolume( 100 );
+				youtube.unMute().setVolume( 100 );
 				getPlaylistStore();
 				showTitle();
 				$( "#room" ).text( "/add/" + location.pathname.split("/")[2] );
@@ -307,7 +306,7 @@
 				if ( event.data == YT.PlayerState.ENDED ) playNextVideo();
 				if ( event.data == YT.PlayerState.PLAYING) {
 					showProgressBar();
-					showTitle( player.getVideoData().title );
+					showTitle( youtube.getVideoData().title );
 				}
 			}
 			
@@ -316,7 +315,7 @@
 			}
 			
 			function cueVideo( id ) {
-				$.getJSON( "https://www.googleapis.com/youtube/v3/videos?part=snippet&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&id=" + id , function( data ) {
+				$.getJSON( apiUrl+"/videos?part=snippet&key="+apiKey+"&id="+id , function( data ) {
 					if( data.items.length > 0 ) {
 						var title = data.items[0].snippet.title, 
 						image = data.items[0].snippet.thumbnails.default.url;
@@ -336,15 +335,15 @@
 				if( $( "#playlist>li" ).length != 0 ) {
 					playing = true;
 					$( "#playlist>li" ).first().slideUp( duration, function() { 
-						player.loadVideoById( $( this ).attr( "id" ) , 0, quality );
+						youtube.loadVideoById( $( this ).attr( "id" ) , 0, quality );
 						$( this ).remove();
 						$( "#playlist" ).perfectScrollbar( "update" );
 						setPlaylistStore();
 					});
 				}
 				else {
-					player.stopVideo();
-					player.clearVideo();
+					youtube.stopVideo();
+					youtube.clearVideo();
 					showTitle();
 					playing = false;
 				}
@@ -355,12 +354,15 @@
 				else $( "#playlist>li>.title" ).css("transition", "opacity 0s linear 250ms");
 			});
 			
+			<!-- BLOCK: use css -->
 			$( "#playlist" ).on( "mouseenter", "li", function() {
 				$( this ).children( ".controls" ).css('display', 'inline');
 			});
 			$( "#playlist" ).on( "mouseleave", "li", function() {
 				$( this ).children( ".controls" ).css('display', 'none');
 			});
+			<!-- /BLOCK: use css -->
+			
 			$( "#playlist" ).on( "click", ".remove", function() {
 				$( this ).parent().slideUp( "fast", function() { 
 					$( this ).remove(); 
@@ -382,8 +384,8 @@
 				searchDelay( function(){
 					$( "#searchResults" ).empty();
 					if( $( "#searchBar" ).val() == "" ) return;
-					$.getJSON( "https://www.googleapis.com/youtube/v3/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&q=" + $( "#searchBar" ).val() , function( queryData ) {
-						var url = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&id=";
+					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + $( "#searchBar" ).val() , function( queryData ) {
+						var url = apiUrl+"/videos?part=contentDetails&key="+apiKey+"&id=";
 						$.each(queryData.items, function( i, item ) {
 							url += item.id.videoId + "%2C";
 							$( "#searchResults" ).append( "<li id='"+ item.id.videoId +"'><img src="+ item.snippet.thumbnails.default.url +"><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by "+ item.snippet.channelTitle +"</p></li>" );
@@ -419,14 +421,14 @@
 			}
 			
 			function showProgressBar() {
-				$( "#progressBar" ).width( player.getCurrentTime() / player.getDuration() * 100 + "%" );
-				if( player.getPlayerState() == YT.PlayerState.PLAYING ) setTimeout( showProgressBar, 250 ); 
+				$( "#progressBar" ).width( youtube.getCurrentTime() / youtube.getDuration() * 100 + "%" );
+				if( youtube.getPlayerState() == YT.PlayerState.PLAYING ) setTimeout( showProgressBar, 250 ); 
 			}
 			$( "#progressBarWrapper" ).on( "click", function( e ) {
 				var posX = e.pageX - $( this ).offset().left,
 					percentage = posX / $( this ).width(),
-					time = player.getDuration() * percentage;
-					player.seekTo( time, true);
+					time = youtube.getDuration() * percentage;
+					youtube.seekTo( time, true);
 			});
 	
 			function showTitle( title ) {

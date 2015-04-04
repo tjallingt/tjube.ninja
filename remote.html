@@ -125,8 +125,10 @@
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="https://www.youtube.com/iframe_api"></script>
 		<script>
-			var socket = io.connect( "http://" + window.location.host );
-			var delay = (function(){
+			var apiKey = "AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY",
+				apiUrl = "https://www.googleapis.com/youtube/v3";
+			var socket = io.connect( window.location.origin );
+			var searchDelay = (function(){
 				var timer = 0;
 				return function(callback, ms){
 					clearTimeout (timer);
@@ -143,11 +145,11 @@
 				$( "#searchResults" ).empty();
 			});
 			$( "#searchBar" ).on( "keyup", function() {
-				delay( function(){
+				searchDelay( function(){
 					$( "#searchResults" ).empty();
 					if( $( "#searchBar" ).val() == "" ) return;
-					$.getJSON( "https://www.googleapis.com/youtube/v3/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&q=" + $( "#searchBar" ).val() , function( queryData ) {
-						var url = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY&id=";
+					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + $( "#searchBar" ).val() , function( queryData ) {
+						var url = apiUrl+"/videos?part=contentDetails&key="+apiKey+"&id=";
 						$.each(queryData.items, function( i, item ) {
 							url += item.id.videoId + "%2C";
 							$( "#searchResults" ).append( "<li id='"+ item.id.videoId +"'><img src="+ item.snippet.thumbnails.default.url +"><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by <span class='channelTitle'>"+ item.snippet.channelTitle +"</span></p></li>" );
