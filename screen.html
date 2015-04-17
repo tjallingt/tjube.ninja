@@ -256,21 +256,20 @@
 				apiUrl = "https://www.googleapis.com/youtube/v3",
 				youtube = {}, 
 				quality = "default", 
-				playing = false,
-				searchWindowTimeout = 25000;
+				playing = false;
 			var socket = io.connect( window.location.origin );
-			var searchWindowDelay = (function(){
+			var delaySearchCancel = (function(){
 				var timer = 0;
-				return function(callback, ms){
-					clearTimeout (timer);
-					timer = setTimeout(callback, ms);
+				return function(){
+					clearTimeout( timer );
+					timer = setTimeout( searchCancel, 25000 );
 				};
 			})();
-			var searchDelay = (function(){
+			var delaySearch = (function(){
 				var timer = 0;
-				return function(callback, ms){
-					clearTimeout (timer);
-					timer = setTimeout(callback, ms);
+				return function( callback ){
+					clearTimeout( timer );
+					timer = setTimeout( callback, 400 );
 				};
 			})();
 			
@@ -354,14 +353,14 @@
 				else $( "#playlist>li>.title" ).css("transition", "opacity 0s linear 250ms");
 			});
 			
-			<!-- BLOCK: use css -->
+			<!-- use css -->
 			$( "#playlist" ).on( "mouseenter", "li", function() {
 				$( this ).children( ".controls" ).css('display', 'inline');
 			});
 			$( "#playlist" ).on( "mouseleave", "li", function() {
 				$( this ).children( ".controls" ).css('display', 'none');
 			});
-			<!-- /BLOCK: use css -->
+			<!-- /use css -->
 			
 			$( "#playlist" ).on( "click", ".remove", function() {
 				$( this ).parent().slideUp( "fast", function() { 
@@ -372,16 +371,16 @@
 			});
 			
 			$( "#searchBar" ).on( "focus", function() {
-				searchWindowDelay( searchCancel, searchWindowTimeout );
+				delaySearchCancel();
 				$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
 				$( "#searchCancel" ).text("X").addClass("searchCancelHover");
 				$( "#searchResults" ).show();
 			});
 			
 			$( "#searchBar" ).on( "keyup", function() {
-				searchWindowDelay( searchCancel, searchWindowTimeout );
+				delaySearchCancel();
 				
-				searchDelay( function(){
+				delaySearch( function(){
 					$( "#searchResults" ).empty();
 					if( $( "#searchBar" ).val() == "" ) return;
 					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + $( "#searchBar" ).val() , function( queryData ) {
@@ -397,11 +396,11 @@
 						});
 						$( "#searchResults" ).perfectScrollbar( "update" );
 					});
-				}, 250 );
+				});
 			});
 			
 			$( "#searchResults" ).on( "click", "li", function() {
-				searchWindowDelay( searchCancel, searchWindowTimeout );
+				delaySearchCancel();
 				cueVideo( $( this ).attr( "id" ) );
 				$( this ).slideUp( "fast", function() {
 					$( "#searchResults" ).perfectScrollbar( "update" );

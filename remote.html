@@ -128,11 +128,11 @@
 			var apiKey = "AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY",
 				apiUrl = "https://www.googleapis.com/youtube/v3";
 			var socket = io.connect( window.location.origin );
-			var searchDelay = (function(){
+			var delaySearch = (function(){
 				var timer = 0;
-				return function(callback, ms){
-					clearTimeout (timer);
-					timer = setTimeout(callback, ms);
+				return function( callback ){
+					clearTimeout( timer );
+					timer = setTimeout( callback, 400 );
 				};
 			})();
 		
@@ -145,7 +145,7 @@
 				$( "#searchResults" ).empty();
 			});
 			$( "#searchBar" ).on( "keyup", function() {
-				searchDelay( function(){
+				delaySearch( function(){
 					$( "#searchResults" ).empty();
 					if( $( "#searchBar" ).val() == "" ) return;
 					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + $( "#searchBar" ).val() , function( queryData ) {
@@ -160,7 +160,7 @@
 							});
 						});
 					});
-				}, 250 );
+				});
 			});
 			$( "#searchResults" ).on( "click", "li", function() {
 				if( confirm( "Do you want to add this video to the playlist?\n\n'"+ $( ".title", this ).text() +"' by "+ $( ".channelTitle", this ).text() ) ) socket.emit( "cueVideo", $( this ).attr( "id" ) );
