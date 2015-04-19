@@ -106,6 +106,9 @@
 				position: absolute;
 				right: 20px;
 			}
+			#playlist>li:hover .controls {
+				display: inline;
+			}
 			#playlist>li>.icon {
 				position: absolute;
 				margin-left: 5px;
@@ -119,8 +122,6 @@
 				width: calc(100% - 20px);
 				padding-left: 20px;
 				opacity: 0;
-				
-				transition: opacity 0s linear 250ms;
 			}
 			#playlistWrapper:hover #playlist>li>.title {
 				opacity: 1;
@@ -216,16 +217,24 @@
 				position: absolute;
 				bottom: 10px;
 				left: 10px;
-				opacity: 0.75;
+				opacity: 0.5;
 				
 				transition: bottom 0.1s linear;
+			}
+			#aboutWrapper:hover {
+				opacity: 1;
 			}
 			#progressBarWrapper:hover + #aboutWrapper {
 				bottom: 20px;
 			}
 			#about {
-				margin: 0 5px;
 				color: white;
+				text-decoration: none;
+				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
+			}
+			#about .fa {
+				margin: 0 5px;
+				padding-right: 1px;
 			}
 		</style>
 	</head>
@@ -247,8 +256,10 @@
 		</div>
 		
 		<div id="aboutWrapper">
-			<a id="about" href="/about"><i class="fa fa-question-circle fa-lg"></i></a>
-			<span id="room"></span>
+			<a id="about" href="/about" target="_blank">
+				<i class="fa fa-question-circle fa-lg"></i>
+				<span id="room"></span>
+			</a>
 		</div>
 		
 		
@@ -355,20 +366,6 @@
 					playing = false;
 				}
 			}
-			
-			$("#playlistWrapper").bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
-				if( $( this ).css( "opacity" ) == "1" ) $( "#playlist>li>.title" ).css("transition", "opacity 0s linear");
-				else $( "#playlist>li>.title" ).css("transition", "opacity 0s linear 250ms");
-			});
-			
-			<!-- use css -->
-			$( "#playlist" ).on( "mouseenter", "li", function() {
-				$( this ).children( ".controls" ).css('display', 'inline');
-			});
-			$( "#playlist" ).on( "mouseleave", "li", function() {
-				$( this ).children( ".controls" ).css('display', 'none');
-			});
-			<!-- /use css -->
 			
 			$( "#playlist" ).on( "click", ".remove", function() {
 				$( this ).parent().slideUp( "fast", function() { 
