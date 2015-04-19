@@ -390,12 +390,12 @@
 					if( $( "#searchBar" ).val() == "" ) return;
 					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + $( "#searchBar" ).val() , function( queryData ) {
 						var url = apiUrl+"/videos?part=contentDetails&key="+apiKey+"&id=";
-						$.each(queryData.items, function( i, item ) {
+						queryData.items.forEach( function( item ) {
 							url += item.id.videoId + "%2C";
 							$( "#searchResults" ).append( "<li id='"+ item.id.videoId +"'><img src="+ item.snippet.thumbnails.default.url +"><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by "+ item.snippet.channelTitle +"</p></li>" );
 						});
 						$.getJSON( url, function( contentData ) {
-							$.each(contentData.items, function(i, item) {
+							contentData.items.forEach( function( item ) {
 								$( "#searchResults>#"+item.id+">.contentData" ).prepend( item.contentDetails.duration.replace("PT","").toLowerCase() +" @ "+ item.contentDetails.definition );
 							});
 						});
@@ -489,7 +489,7 @@
 					var playlist = sessionStorage[ location.pathname.split("/")[2] ];
 					if( playlist ) {
 						playlist = JSON.parse( playlist );
-						$.each(playlist, function( i, item ) {
+						playlist.forEach( function( item ) {
 							cueVideo( item );
 						});
 					}
