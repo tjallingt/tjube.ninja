@@ -23,6 +23,11 @@ app.get( "/", function ( req, res ) {
 	else res.status( 503 ).send( "Server is crowded, please try again later :)" );
 });
 
+// Show about page
+app.get( "/about", function ( req, res ) {
+	res.sendFile( __dirname + "/about.html" );
+});
+
 // Show public screen
 app.get( "/room/:room("+roomIdRegex+")", function ( req, res ) {
 		res.sendFile( __dirname + "/screen.html" );
