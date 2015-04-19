@@ -13,6 +13,7 @@ Inspired by http://protu.be/
 * jQuery
 * jQuery UI
 * perfect-scrollbar
+* Font-Awesome
 
 ## todo
 * Add an about page that explains how to use it
