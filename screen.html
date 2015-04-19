@@ -476,12 +476,12 @@
 					$( "#playlist>li" ).each( function(){
 						playlist.push( $( this ).attr( "id" ) );
 					});
-					sessionStorage[ location.pathname.split("/")[1] ] = JSON.stringify( playlist );
+					sessionStorage[ location.pathname.split("/")[2] ] = JSON.stringify( playlist );
 				}
 			}
 			function getPlaylistStore() {
 				if( typeof( Storage ) !== "undefined" ) {
-					var playlist = sessionStorage[ location.pathname.split("/")[1] ];
+					var playlist = sessionStorage[ location.pathname.split("/")[2] ];
 					if( playlist ) {
 						playlist = JSON.parse( playlist );
 						$.each(playlist, function( i, item ) {
