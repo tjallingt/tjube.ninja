@@ -180,14 +180,6 @@
 				margin-right: 5px;
 			}
 			
-			#room {
-				position: absolute;
-				bottom: 10px;
-				left: 10px;
-				
-				transition: bottom 0.1s linear;
-			}
-			
 			#progressBarWrapper {
 				position: fixed;
 				bottom: 0px;
@@ -219,8 +211,21 @@
 			#progressBarWrapper:hover #progressBar::after {
 				width: 5px;
 			}
-			#progressBarWrapper:hover + #room {
+			
+			#aboutWrapper {
+				position: absolute;
+				bottom: 10px;
+				left: 10px;
+				opacity: 0.75;
+				
+				transition: bottom 0.1s linear;
+			}
+			#progressBarWrapper:hover + #aboutWrapper {
 				bottom: 20px;
+			}
+			#about {
+				margin: 0 5px;
+				color: white;
 			}
 		</style>
 	</head>
@@ -241,7 +246,10 @@
 			<div id="progressBar"></div>
 		</div>
 		
-		<div id="room"></div>
+		<div id="aboutWrapper">
+			<a id="about" href="/about"><i class="fa fa-question-circle fa-lg"></i></a>
+			<span id="room"></span>
+		</div>
 		
 		
 		<!-- JS -->
