@@ -1,5 +1,5 @@
 /*
-	Node server for the videoapp.
+	Node server for Tjube.Ninja.
 	The server generates a unique room id when a user connects and allows the remotes to send data to the screen(s).
 */
 

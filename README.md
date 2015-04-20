@@ -1,5 +1,5 @@
-# videoapp
-Video app made with Node.JS
+# Tjube.Ninja
+Party video app made with Node.JS
 
 ## about
 A simple app that allows people to create a public screen on a beamer and control it with "remotes".
