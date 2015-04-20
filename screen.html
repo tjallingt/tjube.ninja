@@ -445,7 +445,7 @@
 				showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
 			}
 			function showSubTitle( subtitle ) {
-				var newSubtitle = ( !subtitle ) ? "To add videos remotely go to "+ location.host +"/add/"+ location.pathname.split("/")[2] : subtitle;
+				var newSubtitle = ( !subtitle ) ? "To add videos from another device go to "+ location.host +"/add/"+ location.pathname.split("/")[2] : subtitle;
 				if( $( "#subtitle" ).text() != newSubtitle) {
 					$( "#subtitle" ).fadeOut( "fast", function() {
 						if ( subtitle ) $( this ).addClass( "playnext" );
