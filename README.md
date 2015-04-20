@@ -3,7 +3,7 @@ Party video app made with Node.JS
 
 ## about
 A simple app that allows people to create a public screen on a beamer and control it with "remotes".
-Demo: http://tjallingt.ninja
+Demo: http://tjube.ninja
 Inspired by http://protu.be/
 
 ## build with:
