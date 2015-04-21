@@ -424,8 +424,9 @@
 				});
 			}
 			
-			function showProgressBar() {
-				$( "#progressBar" ).width( youtube.getCurrentTime() / youtube.getDuration() * 100 + "%" );
+			function showProgressBar( time ) {
+				time = ( typeof time === "undefined" ) ? youtube.getCurrentTime() : time;
+				$( "#progressBar" ).width( time / youtube.getDuration() * 100 + "%" );
 				if( youtube.getPlayerState() == YT.PlayerState.PLAYING ) setTimeout( showProgressBar, 250 ); 
 			}
 			$( "#progressBarWrapper" ).on( "click", function( e ) {
@@ -433,6 +434,7 @@
 					percentage = posX / $( this ).width(),
 					time = youtube.getDuration() * percentage;
 					youtube.seekTo( time, true);
+					showProgressBar( time );
 			});
 	
 			function showTitle( title ) {
