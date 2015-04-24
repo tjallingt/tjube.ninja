@@ -34,8 +34,8 @@
 				position: absolute;
 				top: 10px;
 				left: 10px;
-				width: 100%;
 				font-size: 150%;
+				white-space: nowrap;
 			}
 			#subtitle {
 				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
@@ -298,10 +298,12 @@
 					width: $( window ).width(),
 					playerVars: {
 						controls: 0,
+						cc_load_policy : 0,
 						iv_load_policy: 3,
 						modestbranding: 1,
 						rel: 0,
-						showinfo: 0
+						showinfo: 0,
+						fs: 0
 					},
 					events: {
 						"onReady": onPlayerReady,
