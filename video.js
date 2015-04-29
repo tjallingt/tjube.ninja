@@ -42,12 +42,10 @@ app.get( "/add/:room("+roomIdRegex+")", function ( req, res ) {
 io.on( "connection", function ( socket ) {
 	socket.room = socket.request.headers.referer.replace( "http://"+socket.request.headers.host+"/", "" ).split("/")[1];
 	socket.join( socket.room );
-	console.log( "A user connected to room "+socket.room );
 	
 	socket.on( "cueVideo", function ( id ) {
 		socket.broadcast.to( socket.room ).emit( "cueVideo",  id );
 		socket.emit( "addedVideo",  id );
-		console.log( "User added video "+id+" to room "+socket.room );
 	});
 });
 
