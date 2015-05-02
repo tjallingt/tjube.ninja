@@ -66,7 +66,7 @@
 				height: 100%;
 				opacity: 0.5;
 				
-				transition: all 250ms ease;
+				transition: width 250ms ease, opacity 250ms ease;
 			}
 			#playlistWrapper:hover {
 				width: 25%;
@@ -74,7 +74,6 @@
 			}
 			#playlist, #searchResults {
 				position: absolute;
-				top: 35px;
 				right: 0px;
 				list-style-type: none;
 				width: 100%;
@@ -127,15 +126,23 @@
 				opacity: 1;
 			}
 			
+			#searchBarWrapper {
+				height: 0px;
+				transition: height 250ms ease;
+			}
+			#playlistWrapper:hover #searchBarWrapper {
+				height: 35px;
+			}
 			#searchBar {
 				float: left;
 				width: 90%;
 				border: none;
-				height: 35px;
+				height: 100%;
 				padding-left: 5px;
 			}
+
 			#searchCancel {
-				height: 35px;
+				height: 100%;
 				line-height: 35px;
 				float: right;
 				background-color: #FFF;
@@ -246,7 +253,10 @@
 		<div id="player"></div>
 		
 		<div id="playlistWrapper">
-			<input type="text" id="searchBar"  placeholder="Search for videos" autocomplete="off"><div id="searchCancel"></div>
+			<div id="searchBarWrapper">
+				<input type="text" id="searchBar"  placeholder="Search for videos" autocomplete="off">
+				<div id="searchCancel"></div>
+			</div>
 			<ul id="searchResults"></ul>
 			<ul id="playlist"></ul>
 		</div>
@@ -380,6 +390,7 @@
 			$( "#searchBar" ).on( "focus", function() {
 				delaySearchCancel();
 				$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
+				$( "#searchBarWrapper" ).css({height: "35px"});
 				$( "#searchCancel" ).text("X").addClass("searchCancelHover");
 				$( "#searchResults" ).show();
 			});
@@ -419,6 +430,7 @@
 			function searchCancel() {
 				$( "#searchBar" ).val( "" ).blur();
 				$( "#playlistWrapper" ).css({width: "", opacity: ""});
+				$( "#searchBarWrapper" ).css({height: ""});
 				$( "#searchCancel" ).text("").removeClass("searchCancelHover");
 				$( "#playlist" ).perfectScrollbar( "update" );
 				$( "#searchResults" ).fadeOut( "fast", function() {
