@@ -271,11 +271,11 @@
 		<script src="https://www.youtube.com/iframe_api"></script>
 		<script>			
 			// YouTube API code
-			var apiKey = "AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY",
-				apiUrl = "https://www.googleapis.com/youtube/v3",
-				youtube = {}, 
-				quality = "default", 
-				playing = false;
+			var apiKey = "AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY";
+			var apiUrl = "https://www.googleapis.com/youtube/v3";
+			var youtube = {};
+			var quality = "default";
+			var playing = false;
 			var socket = io.connect( window.location.origin );
 			var delaySearchCancel = (function(){
 				var timer = 0;
