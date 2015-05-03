@@ -88,7 +88,7 @@
 				width: 7%;
 				min-width: 90px;
 				height: 100%;
-				opacity: 0.6;
+				opacity: 0.4;
 				
 				transition: width 250ms ease, opacity 250ms ease;
 			}
@@ -101,7 +101,6 @@
 				right: 0px;
 				list-style-type: none;
 				width: 100%;
-				height: calc(100% - 35px);
 				text-shadow: 0px 0px 20px black, 0px 0px 20px black, 0px 0px 20px black;
 				cursor: default;
 				overflow-x: hidden;
@@ -115,6 +114,11 @@
 				padding-right: 10px;
 			}
 			
+			#playlist {
+				height: 100%;
+				background: rgba(255,255,255,0.15);
+				transition: height 250ms ease;
+			}
 			#playlist>li {
 				background-repeat: no-repeat;
 				background-position: center;
@@ -142,6 +146,9 @@
 				width: calc(100% - 20px);
 				padding-left: 20px;
 				opacity: 0;
+			}
+			#playlistWrapper:hover #playlist {
+				height: calc(100% - 35px);
 			}
 			#playlistWrapper:hover #playlist>li>.title {
 				opacity: 1;
@@ -174,6 +181,7 @@
 				text-align: center;
 			}
 			#searchResults {
+				height: calc(100% - 35px);
 				display: none;
 				background-color: rgba(0,0,0,0.75);
 				z-index: 1;
@@ -312,14 +320,14 @@
 			var videosCued = false;
 			var socket = io.connect( window.location.origin );
 			var delaySearchCancel = (function(){
-				var timer = 0;
+				var timer;
 				return function(){
 					clearTimeout( timer );
 					timer = setTimeout( searchCancel, 25000 );
 				};
 			})();
 			var delaySearch = (function(){
-				var timer = 0;
+				var timer;
 				return function( callback ){
 					clearTimeout( timer );
 					timer = setTimeout( callback, 400 );
@@ -357,10 +365,14 @@
 			}
 			
 			function onPlayerStateChange( event ) {
-				if ( event.data == YT.PlayerState.ENDED ) playNextVideo();
-				if ( event.data == YT.PlayerState.PLAYING) {
-					showProgressBar();
-					showTitle( youtube.getVideoData().title );
+				switch( event.data ) {
+					case YT.PlayerState.ENDED:
+						playNextVideo();
+						break;
+					case YT.PlayerState.PLAYING:
+						showProgressBar();
+						showTitle( youtube.getVideoData().title );
+						break;
 				}
 			}
 			
@@ -399,6 +411,7 @@
 				else {
 					youtube.stopVideo();
 					youtube.clearVideo();
+					setTimeout( showProgressBar, 250, 0 );
 					videosCued = false;
 					showTitle();
 					$( "#pause" ).fadeIn( "fast" );
@@ -506,12 +519,12 @@
 			
 			function showSubTitle( subtitle ) {
 				var subtitleEl = $( "#subtitle" );
-				var newSubtitle = ( !subtitle ) ? "To add videos from another device go to "+ location.host +"/add/"+ location.pathname.split("/")[2] : subtitle;
-				if( subtitleEl.text() != newSubtitle || videosCued != subtitleEl.hasClass( "playnext" ) ) {
+				subtitle = ( !subtitle ) ? "To add videos from another device go to "+ location.host +"/add/"+ location.pathname.split("/")[2] : subtitle;
+				if( subtitleEl.text() != subtitle || videosCued != subtitleEl.hasClass( "playnext" ) ) {
 					subtitleEl.fadeOut( "fast", function() {
 						if( videosCued ) $( this ).addClass( "playnext" );
 						else $( this ).removeClass( "playnext" );
-						$( this ).text( newSubtitle ).fadeIn( "slow" );
+						$( this ).text( subtitle ).fadeIn( "slow" );
 					});
 				}
 			}
