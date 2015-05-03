@@ -30,6 +30,7 @@
 			}
 			
 			#title, #subtitle {
+				z-index: 1;
 				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
 				position: absolute;
 				top: 10px;
@@ -57,6 +58,28 @@
 				color: white;
 			}
 			
+			#playerShield {
+				z-index: 0;
+				position:absolute;
+				top:0px;
+				left:0px;
+				width:100vw;
+				height:100vh;
+			}
+			#pause {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				background: rgba(0,0,0,0.5);
+				border-radius: 5px;
+				padding: 0 10px;
+			}
+			#player {
+				width:100vw;
+				height:100vh;
+			}
+			
 			#playlistWrapper {
 				position: absolute;
 				right: 0px;
@@ -64,7 +87,7 @@
 				width: 7%;
 				min-width: 90px;
 				height: 100%;
-				opacity: 0.5;
+				opacity: 0.6;
 				
 				transition: width 250ms ease, opacity 250ms ease;
 			}
@@ -250,6 +273,9 @@
 		<div id="title"></div>
 		<div id="subtitle"></div>
 		
+		<div id="playerShield">
+			<i id="pause" class="fa fa-pause fa-5x"></i>
+		</div>
 		<div id="player"></div>
 		
 		<div id="playlistWrapper">
@@ -285,7 +311,7 @@
 			var apiUrl = "https://www.googleapis.com/youtube/v3";
 			var youtube = {};
 			var quality = "default";
-			var playing = false;
+			var hasPlaylist = false;
 			var socket = io.connect( window.location.origin );
 			var delaySearchCancel = (function(){
 				var timer = 0;
@@ -351,7 +377,7 @@
 						image = data.items[0].snippet.thumbnails.default.url;
 						if( data.items[0].snippet.thumbnails.hasOwnProperty("standard") ) image = data.items[0].snippet.thumbnails.standard.url;
 						$( "#playlist" ).append( "<li id='"+ id +"' style=\"background-image: url("+ image +")\"><p class='fa fa-sort icon controls'></p><p class='title'>"+ title +"</p><p class='icon controls remove fa fa-times'></p></li>" );
-						if( !playing ) playNextVideo();
+						if( !hasPlaylist ) playNextVideo();
 						else {
 							showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
 							setPlaylistStore();
@@ -363,7 +389,8 @@
 			function playNextVideo( duration ) {
 				duration = ( duration == "" ) ? "fast" : duration; 
 				if( $( "#playlist>li" ).length != 0 ) {
-					playing = true;
+					hasPlaylist = true;
+					$( "#pause" ).fadeOut( "fast" );
 					$( "#playlist>li" ).first().slideUp( duration, function() { 
 						youtube.loadVideoById( $( this ).attr( "id" ) , 0, quality );
 						$( this ).remove();
@@ -375,9 +402,25 @@
 					youtube.stopVideo();
 					youtube.clearVideo();
 					showTitle();
-					playing = false;
+					hasPlaylist = false;
+					$( "#pause" ).fadeIn( "fast" );
 				}
 			}
+			
+			$( "#playerShield" ).on( "click", function() { 
+				switch( youtube.getPlayerState() ) {
+					case YT.PlayerState.PLAYING:
+						youtube.pauseVideo();
+						$( "#pause" ).fadeIn( "fast" );
+						break;
+					case YT.PlayerState.PAUSED:
+						if( hasPlaylist ) {
+							youtube.playVideo();
+							$( "#pause" ).fadeOut( "fast" );
+						}
+						break;
+				}
+			});
 			
 			$( "#playlist" ).on( "click", ".remove", function() {
 				$( this ).parent().slideUp( "fast", function() { 
@@ -474,19 +517,16 @@
 				playNextVideo();
 			});
 			
-			$( window ).resize(function() {
-				$( "#player" ).height( $( window ).height() );
-				$( "#player" ).width( $( window ).width() );
-			});
-			
 			$( "#playlist" ).sortable({
 				start: function( event, ui ) {
 					$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
+					$( "#searchBarWrapper" ).css({height: "35px"});
 				},
 				update: function( event, ui ) {
 					showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
 					setPlaylistStore();
 					$( "#playlistWrapper" ).css({width: "", opacity: ""});
+					$( "#searchBarWrapper" ).css({height: ""});
 				},	
 				axis: "y"
 			});
