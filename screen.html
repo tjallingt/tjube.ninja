@@ -44,6 +44,9 @@
 				left: 45px;
 				font-size: 100%;
 				color: lightgrey;
+			}
+			#subtitle.playnext:hover {
+				color: white;
 				cursor: pointer;
 			}
 			#subtitle.playnext::before {
@@ -54,9 +57,7 @@
 				-webkit-font-smoothing: antialiased;
 				margin-right: 10px;
 			}
-			#subtitle:hover {
-				color: white;
-			}
+
 			
 			#playerShield {
 				z-index: 0;
@@ -119,22 +120,19 @@
 				background-position: center;
 				background-size: cover;
 			}
-			#playlist>li>.controls {
-				display: none;
-				font-size: 110%;
-				text-shadow: 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black;
-			}
-			#playlist>li>.controls.remove{
-				position: absolute;
-				right: 20px;
-			}
-			#playlist>li:hover .controls {
-				display: inline;
-			}
 			#playlist>li>.icon {
 				position: absolute;
-				margin-left: 5px;
+				margin: 0 20px;
 				line-height: 50px;
+				display: none;
+				font-size: 110%;
+				text-shadow: 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black, 0px 0px 30px black;
+			}
+			#playlist>li>.remove{
+				right: 0px;
+			}
+			#playlist>li:hover .icon {
+				display: inline;
 			}
 			#playlist>li>.title {
 				white-space: nowrap;
@@ -311,7 +309,7 @@
 			var apiUrl = "https://www.googleapis.com/youtube/v3";
 			var youtube = {};
 			var quality = "default";
-			var hasPlaylist = false;
+			var videosCued = false;
 			var socket = io.connect( window.location.origin );
 			var delaySearchCancel = (function(){
 				var timer = 0;
@@ -376,8 +374,8 @@
 						var title = data.items[0].snippet.title, 
 						image = data.items[0].snippet.thumbnails.default.url;
 						if( data.items[0].snippet.thumbnails.hasOwnProperty("standard") ) image = data.items[0].snippet.thumbnails.standard.url;
-						$( "#playlist" ).append( "<li id='"+ id +"' style=\"background-image: url("+ image +")\"><p class='fa fa-sort icon controls'></p><p class='title'>"+ title +"</p><p class='icon controls remove fa fa-times'></p></li>" );
-						if( !hasPlaylist ) playNextVideo();
+						$( "#playlist" ).append( "<li id='"+ id +"' style=\"background-image: url("+ image +")\"><p class='fa fa-sort icon'></p><p class='title'>"+ title +"</p><p class='icon remove fa fa-times'></p></li>" );
+						if( !videosCued ) playNextVideo();
 						else {
 							showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
 							setPlaylistStore();
@@ -389,7 +387,7 @@
 			function playNextVideo( duration ) {
 				duration = ( duration == "" ) ? "fast" : duration; 
 				if( $( "#playlist>li" ).length != 0 ) {
-					hasPlaylist = true;
+					videosCued = true;
 					$( "#pause" ).fadeOut( "fast" );
 					$( "#playlist>li" ).first().slideUp( duration, function() { 
 						youtube.loadVideoById( $( this ).attr( "id" ) , 0, quality );
@@ -401,8 +399,8 @@
 				else {
 					youtube.stopVideo();
 					youtube.clearVideo();
+					videosCued = false;
 					showTitle();
-					hasPlaylist = false;
 					$( "#pause" ).fadeIn( "fast" );
 				}
 			}
@@ -414,7 +412,7 @@
 						$( "#pause" ).fadeIn( "fast" );
 						break;
 					case YT.PlayerState.PAUSED:
-						if( hasPlaylist ) {
+						if( videosCued ) {
 							youtube.playVideo();
 							$( "#pause" ).fadeOut( "fast" );
 						}
@@ -486,6 +484,7 @@
 				$( "#progressBar" ).width( time / youtube.getDuration() * 100 + "%" );
 				if( youtube.getPlayerState() == YT.PlayerState.PLAYING ) setTimeout( showProgressBar, 250 ); 
 			}
+			
 			$( "#progressBarWrapper" ).on( "click", function( e ) {
 				var posX = e.pageX - $( this ).offset().left,
 					percentage = posX / $( this ).width(),
@@ -495,39 +494,45 @@
 			});
 	
 			function showTitle( title ) {
+				var titleEl = $( "#title" );
 				title = ( !title ) ? "Add a video to the playlist to begin watching!" : title;
-				if( $( "#title" ).text() != title) {
-					$( "#title" ).fadeOut( "fast", function() {
+				if( titleEl.text() != title) {
+					titleEl.fadeOut( "fast", function() {
 						$( this ).text( title ).fadeIn( "slow" );
 					});
 				}
 				showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
 			}
+			
 			function showSubTitle( subtitle ) {
+				var subtitleEl = $( "#subtitle" );
 				var newSubtitle = ( !subtitle ) ? "To add videos from another device go to "+ location.host +"/add/"+ location.pathname.split("/")[2] : subtitle;
-				if( $( "#subtitle" ).text() != newSubtitle) {
-					$( "#subtitle" ).fadeOut( "fast", function() {
-						if ( subtitle ) $( this ).addClass( "playnext" );
+				if( subtitleEl.text() != newSubtitle || videosCued != subtitleEl.hasClass( "playnext" ) ) {
+					subtitleEl.fadeOut( "fast", function() {
+						if( videosCued ) $( this ).addClass( "playnext" );
 						else $( this ).removeClass( "playnext" );
 						$( this ).text( newSubtitle ).fadeIn( "slow" );
 					});
 				}
 			}
+			
 			$( "#subtitle" ).on( "click", function() {
 				playNextVideo();
 			});
 			
 			$( "#playlist" ).sortable({
-				start: function( event, ui ) {
+				start: function() {
 					$( "#playlistWrapper" ).css({width: "25%", opacity: "1"});
 					$( "#searchBarWrapper" ).css({height: "35px"});
 				},
-				update: function( event, ui ) {
+				update: function() {
 					showSubTitle( $( "#playlist>li" ).first().children( ".title" ).text() );
 					setPlaylistStore();
+				},
+				stop: function() {
 					$( "#playlistWrapper" ).css({width: "", opacity: ""});
 					$( "#searchBarWrapper" ).css({height: ""});
-				},	
+				},
 				axis: "y"
 			});
 			
@@ -540,6 +545,7 @@
 					sessionStorage[ location.pathname.split("/")[2] ] = JSON.stringify( playlist );
 				}
 			}
+			
 			function getPlaylistStore() {
 				if( typeof( Storage ) !== "undefined" ) {
 					var playlist = sessionStorage[ location.pathname.split("/")[2] ];
