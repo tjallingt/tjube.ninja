@@ -60,23 +60,28 @@
 				float: left;
 				width: 90%;
 				border: none;
-				height: 35px;
+				height: 5vh;
 				padding-left: 5px;
+				margin-right: -5px;
 			}
 			#searchCancel {
-				height: 35px;
-				line-height: 35px;
+				height: 5vh;
+				line-height: 5vh;
 				float: right;
 				background-color: #FFF;
 				width: 10%;
-				margin-left: -5px;
 				color: black;
 				vertical-align: middle;
 				text-align: center;
+				cursor: text;
 			}
-			.searchCancelHover:hover {
+			.showSearchCancel:hover {
+				/* terrible css specificity; the searchcancel id overrules the class values; !important is a dirty fix */
 				background-color: #EEE !important;
-				cursor: pointer;
+				cursor: pointer !important;
+			}
+			.showSearchCancel::after {
+				content: "X";
 			}
 			#searchResults>li {
 				border-bottom: 1px solid white;
@@ -85,20 +90,20 @@
 				background-color: #222;
 				cursor: pointer;
 			}
-			#searchResults>li>.title {
+			#searchResults .title {
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
 				line-height: 25px;
 			}
-			#searchResults>li>.contentData {
+			#searchResults .contentData {
 				font-size: 75%;
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
 				line-height: 25px;
 			}
-			#searchResults>li>img {
+			#searchResults .img {
 				height: 100%;
 				float: left;
 				margin-right: 5px;
@@ -108,6 +113,15 @@
 				#playlistWrapper {
 					width: 100%;
 					left: 0px;
+				}
+			}
+			@media screen and (orientation:portrait) {
+				#searchBar {
+					height: 5vh;
+				}
+				#searchCancel {
+					height: 10vh;
+					line-height: 10vh;
 				}
 			}
 		</style>
@@ -136,31 +150,40 @@
 			})();
 		
 			$( "#searchBar" ).on( "focus", function() {
-				$( "#searchCancel" ).text("X").addClass("searchCancelHover");
+				$( "#searchCancel" ).addClass("showSearchCancel");
 			});
 			$( "#searchCancel" ).on( "click", function() {
-				$( "#searchCancel" ).text("").removeClass("searchCancelHover");
+				$( "#searchCancel" ).removeClass("showSearchCancel");
 				$( "#searchBar" ).val( "" );
 				$( "#searchResults" ).empty();
 			});
-			$( "#searchBar" ).on( "keyup", function() {
-				delaySearch( function(){
-					$( "#searchResults" ).empty();
-					if( $( "#searchBar" ).val() == "" ) return;
-					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + $( "#searchBar" ).val() , function( queryData ) {
+			
+			$( "#searchBar" ).on( "keyup", function( e ) {
+				clearTimeout( $( this ).data( "timer" ) );
+				if (e.keyCode == 13) search( true );
+				else $( this ).data( "timer", setTimeout( search, 500 ) );
+			});
+			function search( force ) {
+				var query = $( "#searchBar" ).val();
+				if( ( force || query.length > 3 ) && query !=  $( "#searchBar" ).data( "oldQuery" ) ) {
+					$( "#searchBar" ).data( "oldQuery", query );
+					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + query , function( queryData ) {
 						var url = apiUrl+"/videos?part=contentDetails&key="+apiKey+"&id=";
+						var searchResults = "";
 						queryData.items.forEach( function( item ) {
 							url += item.id.videoId + "%2C";
-							$( "#searchResults" ).append( "<li id='"+ item.id.videoId +"'><img src="+ item.snippet.thumbnails.default.url +"><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by <span class='channelTitle'>"+ item.snippet.channelTitle +"</span></p></li>" );
+							searchResults += "<li id='"+ item.id.videoId +"' title='"+ item.snippet.title +"'><img src="+ item.snippet.thumbnails.default.url +" class='img'><p class='title'>"+ item.snippet.title +"</p><p class='contentData'> by "+ item.snippet.channelTitle +"</p></li>";
 						});
+						$( "#searchResults" ).html( searchResults );
 						$.getJSON( url, function( contentData ) {
 							contentData.items.forEach( function( item ) {
 								$( "#searchResults>#"+item.id+">.contentData" ).prepend( item.contentDetails.duration.replace("PT","").toLowerCase() +" @ "+ item.contentDetails.definition );
 							});
 						});
+						$( "#searchResults" ).perfectScrollbar( "update" );
 					});
-				});
-			});
+				}
+			}
 			$( "#searchResults" ).on( "click", "li", function() {
 				if( confirm( "Do you want to add this video to the playlist?\n\n'"+ $( ".title", this ).text() +"' by "+ $( ".channelTitle", this ).text() ) ) socket.emit( "cueVideo", $( this ).attr( "id" ) );
 			});
