@@ -3,7 +3,7 @@
 	<head>
 		<title>Tjube.Ninja Remote</title>
 		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">		
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no"/>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta charset="utf-8">
 		<meta name="description" content="Tjube.Ninja remote, add videos to the playlist on the screen.">
@@ -28,22 +28,37 @@
 			}
 			
 			#playlistWrapper {
-				position: absolute;
-				left: calc( 50% - 25%);
-				top: 0px;
 				width: 50%;
-				min-width: 90px;
-				height: 100%;
+				margin: auto;
 			}
-
+			
+			#searchBar {
+				float: left;
+				width: 90%;
+				border: none;
+				height: 35px;
+				padding-left: 5px;
+				margin-right: -5px;
+			}
+			#searchCancel {
+				height: 35px;
+				line-height: 35px;
+				float: right;
+				background-color: #FFF;
+				width: 10%;
+				color: black;
+				vertical-align: middle;
+				text-align: center;
+			}
+			#searchCancel::after {
+				content: "X";
+			}
+			
 			#searchResults {
-				position: absolute;
-				top: 35px;
-				top: 35px;
 				margin: auto;
 				list-style-type: none;
 				width: 100%;
-				height: calc(100% - 35px);
+				height: calc(100vh - 35px);
 				cursor: default;
 				overflow-x: hidden;
 				overflow-y: auto;
@@ -54,36 +69,6 @@
 				line-height: 50px; 
 				vertical-align: middle;
 				padding-right: 10px;
-			}
-			
-			#searchBar {
-				float: left;
-				width: 90%;
-				border: none;
-				height: 5vh;
-				padding-left: 5px;
-				margin-right: -5px;
-			}
-			#searchCancel {
-				height: 5vh;
-				line-height: 5vh;
-				float: right;
-				background-color: #FFF;
-				width: 10%;
-				color: black;
-				vertical-align: middle;
-				text-align: center;
-				cursor: text;
-			}
-			.showSearchCancel:hover {
-				/* terrible css specificity; the searchcancel id overrules the class values; !important is a dirty fix */
-				background-color: #EEE !important;
-				cursor: pointer !important;
-			}
-			.showSearchCancel::after {
-				content: "X";
-			}
-			#searchResults>li {
 				border-bottom: 1px solid white;
 			}
 			#searchResults>li:hover {
@@ -109,19 +94,19 @@
 				margin-right: 5px;
 			}
 			
-			@media (max-width: 720px) {
+			@media (max-width: 900px) {
 				#playlistWrapper {
 					width: 100%;
-					left: 0px;
 				}
-			}
-			@media screen and (orientation:portrait) {
 				#searchBar {
-					height: 5vh;
+					height: 50px;
 				}
 				#searchCancel {
-					height: 10vh;
-					line-height: 10vh;
+					height: 50px;
+					line-height: 50px;
+				}
+				#searchResults {
+					height: calc( 100vh - 50px );
 				}
 			}
 		</style>
@@ -129,7 +114,8 @@
 	<body>
 		
 		<div id="playlistWrapper">
-			<input type="text" id="searchBar"  placeholder="Search on YouTube" autocomplete="off"><div id="searchCancel"></div>
+			<input type="text" id="searchBar"  placeholder="Search on YouTube" autocomplete="off">
+			<div id="searchCancel"></div>
 			
 			<ul id="searchResults"></ul>			
 		</div>
@@ -141,19 +127,8 @@
 			var apiKey = "AIzaSyCIPY7lwNyrTFIQmvMPsFHWh54IA2gMvHY";
 			var apiUrl = "https://www.googleapis.com/youtube/v3";
 			var socket = io.connect( window.location.origin );
-			var delaySearch = (function(){
-				var timer = 0;
-				return function( callback ){
-					clearTimeout( timer );
-					timer = setTimeout( callback, 400 );
-				};
-			})();
-		
-			$( "#searchBar" ).on( "focus", function() {
-				$( "#searchCancel" ).addClass("showSearchCancel");
-			});
+			
 			$( "#searchCancel" ).on( "click", function() {
-				$( "#searchCancel" ).removeClass("showSearchCancel");
 				$( "#searchBar" ).val( "" );
 				$( "#searchResults" ).empty();
 			});
@@ -163,8 +138,10 @@
 				if (e.keyCode == 13) search( true );
 				else $( this ).data( "timer", setTimeout( search, 500 ) );
 			});
+			
 			function search( force ) {
 				var query = $( "#searchBar" ).val();
+				if( force ) $( "#searchBar" ).blur();
 				if( ( force || query.length > 3 ) && query !=  $( "#searchBar" ).data( "oldQuery" ) ) {
 					$( "#searchBar" ).data( "oldQuery", query );
 					$.getJSON( apiUrl+"/search?videoEmbeddable=true&part=snippet&type=video&maxResults=20&key="+apiKey+"&q=" + query , function( queryData ) {
@@ -180,13 +157,14 @@
 								$( "#searchResults>#"+item.id+">.contentData" ).prepend( item.contentDetails.duration.replace("PT","").toLowerCase() +" @ "+ item.contentDetails.definition );
 							});
 						});
-						$( "#searchResults" ).perfectScrollbar( "update" );
 					});
 				}
 			}
+			
 			$( "#searchResults" ).on( "click", "li", function() {
 				if( confirm( "Do you want to add this video to the playlist?\n\n'"+ $( ".title", this ).text() +"' by "+ $( ".channelTitle", this ).text() ) ) socket.emit( "cueVideo", $( this ).attr( "id" ) );
 			});
+			
 			socket.on("addedVideo", function( id ) {
 				$( "#"+id ).remove();
 			});
