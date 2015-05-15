@@ -59,12 +59,12 @@
 			}
 
 			#playerShield {
-				z-index: 0;
 				position:absolute;
 				top:0px;
 				left:0px;
 				width:100vw;
 				height:100vh;
+				z-index: 0;
 			}
 			#pause {
 				position: absolute;
@@ -78,8 +78,19 @@
 			#player {
 				width:100vw;
 				height:100vh;
+				z-index: -1;
 			}
-			
+			#player.fill {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				transform: translate(-50%, -50%);
+				width: 100vw;
+				height: 56.25vw;
+				min-height: 100vh;
+				min-width: 177.78vh;
+			}
+
 			#playlistWrapper {
 				position: absolute;
 				right: 0px;
@@ -88,6 +99,7 @@
 				min-width: 90px;
 				height: 100%;
 				opacity: 0.45;
+				z-index: 1;
 				
 				transition: width 250ms ease, opacity 250ms ease;
 			}
@@ -224,6 +236,29 @@
 				margin-right: 5px;
 			}
 			
+			#floatProgressBar {
+				position: absolute;
+				bottom: 10px;
+				left: 10px;
+				z-index: 3;
+				
+				transition: bottom 0.1s linear;
+			}
+			
+			#about, #scale {
+				opacity: 0.5;
+				color: white;
+				text-decoration: none;
+				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
+			}
+			#about:hover, #scale:hover {
+				opacity: 1;
+			}
+			#about .fa {
+				margin: 0 5px;
+				padding-right: 1px;
+			}
+			
 			#progressBarWrapper {
 				position: fixed;
 				bottom: 0px;
@@ -256,42 +291,22 @@
 			#progressBarWrapper:hover #progressBar::after {
 				width: 5px;
 			}
-			
-			#aboutWrapper {
-				position: absolute;
-				bottom: 10px;
-				left: 10px;
-				opacity: 0.5;
-				z-index: 3;
-				
-				transition: bottom 0.1s linear;
-			}
-			#aboutWrapper:hover {
-				opacity: 1;
-			}
-			#progressBarWrapper:hover + #aboutWrapper {
+			#progressBarWrapper:hover + #floatProgressBar {
 				bottom: 30px;
-			}
-			#about {
-				color: white;
-				text-decoration: none;
-				text-shadow: 0px 0px 10px black, 0px 0px 10px black;
-			}
-			#about .fa {
-				margin: 0 5px;
-				padding-right: 1px;
 			}
 		</style>
 	</head>
 	<body>
 		
-		<div id="title"></div>
-		<div id="subtitle"></div>
+
+		<div id="player"></div>
 		
 		<div id="playerShield">
 			<i id="pause" class="fa fa-pause fa-4x"></i>
 		</div>
-		<div id="player"></div>
+				
+		<div id="title"></div>
+		<div id="subtitle"></div>
 		
 		<div id="playlistWrapper" style="width: 25%; opacity: 1;">
 			<div id="searchBarWrapper" style="height: 35px;">
@@ -304,15 +319,15 @@
 		
 		<div id="progressBarWrapper">
 			<div id="progressBar"></div>
-		</div>
+		</div>		
 		
-		<div id="aboutWrapper">
-			<a id="about" href="/about" target="_blank">
+		<div id="floatProgressBar">
+			<i id="scale" class="fa fa-expand fa-lg"></i>
+			<a id="about" href="/about" target="_blank" title="about">
 				<i class="fa fa-question-circle fa-lg"></i>
 				<span id="room"></span>
 			</a>
 		</div>
-		
 		
 		<!-- JS -->
 		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
@@ -354,70 +369,76 @@
 						fs: 0
 					},
 					events: {
-						"onReady": onPlayerReady,
-						"onStateChange": onPlayerStateChange,
-						"onError": onPlayerError
+						"onReady": function() {
+							youtube.unMute().setVolume( 100 );
+							restorePlaylist();
+							showTitle();
+							// playlist starts open to give the user an idea of where it is and collapses once the youtube player loaded
+							$( "#playlistWrapper" ).css({width: "", opacity: ""});
+							$( "#searchBarWrapper" ).css({height: ""});
+							// show the room nr on the bottom left
+							$( "#room" ).text( "/add/" + location.pathname.split("/")[2] );
+							// use perfect scrollbar on the playlist and searchResults
+							$( "#playlist" ).perfectScrollbar();
+							$( "#searchResults" ).perfectScrollbar();
+						},
+						"onStateChange": function( event ) {
+							switch( event.data ) {
+								case YT.PlayerState.ENDED:
+									// attempt to play the next video
+									playNextVideo();
+									break;
+								case YT.PlayerState.PLAYING:
+									// start off the show progress bar function and show the title
+									showProgressBar();
+									showTitle( youtube.getVideoData().title );
+									break;
+							}
+						},
+						"onError": function( errorCode ) {
+							// skip the video that caused the error
+							playNextVideo();
+							// throw errors?
+							// 2 - invalid parameter (problem in the app)
+							// 100 - video not found (has been removed/marked private)
+							// 101/150 - can't be embeded
+						}
 					}
 				});
 			}
 			
-			function onPlayerReady( event ) {
-				youtube.unMute().setVolume( 100 );
-				restorePlaylist();
-				showTitle();
-				// playlist starts open to give the user an idea of where it is and collapses once the youtube player loaded
-				$( "#playlistWrapper" ).css({width: "", opacity: ""});
-				$( "#searchBarWrapper" ).css({height: ""});
-				// show the room nr on the bottom left
-				$( "#room" ).text( "/add/" + location.pathname.split("/")[2] );
-				// use perfect scrollbar on the playlist and searchResults
-				$( "#playlist" ).perfectScrollbar();
-				$( "#searchResults" ).perfectScrollbar();
-			}
-			
-			function onPlayerStateChange( event ) {
-				switch( event.data ) {
-					case YT.PlayerState.ENDED:
-						// attempt to play the next video
-						playNextVideo();
-						break;
-					case YT.PlayerState.PLAYING:
-						// start off the show progress bar function and show the title
-						showProgressBar();
-						showTitle( youtube.getVideoData().title );
-						break;
-				}
-			}
-			
-			function onPlayerError( event ) {
-				// skip the video that caused the error
-				playNextVideo();
-			}
-			
-			function cueVideo( id, options ) {
-				// use default options for cuevideo (overkill but best practice)
+			// ids can be a string (single id) or an array of ids
+			function cueVideo( ids, options ) {
+				// use default options for cuevideo (overkill but good practice)
 				var defaultOptions = {
 					storePlaylist: true
 				};
-				if( !options ) options = defaultOptions;
-				for( key in defaultOptions ) {
-					if( typeof options[ key ] == "undefined" ) options[ key ] = defaultOptions[ key ];
+				if( !options ) {
+					options = defaultOptions;
+				}
+				else {
+					for( key in defaultOptions ) {
+						if( typeof options[ key ] == "undefined" ) options[ key ] = defaultOptions[ key ];
+					}
 				}
 				
 				// get the title and image of the cued video
-				$.getJSON( apiUrl+"/videos?part=snippet&key="+apiKey+"&id="+id , function( data ) {
-					if( data.items.length > 0 ) {
-						var title = data.items[0].snippet.title, 
-						image = data.items[0].snippet.thumbnails.default.url;
+				$.getJSON( apiUrl+"/videos?part=snippet&key="+apiKey+"&id="+ids , function( data ) {
+					// catch error messages?
+					// typeof item.error != "undefined"
+					data.items.forEach( function( item ) {
+						var title = item.snippet.title; 
+						var image = item.snippet.thumbnails.default.url;
+						var id = item.id;
 						// if a higher quality image is available use that instead
-						if( data.items[0].snippet.thumbnails.hasOwnProperty("standard") ) image = data.items[0].snippet.thumbnails.standard.url;
+						if( item.snippet.thumbnails.hasOwnProperty("standard") ) image = item.snippet.thumbnails.standard.url;
 						$( "#playlist" ).append( "<li id='"+ id +"' style=\"background-image: url("+ image +")\" title='"+ title +"'><p class='fa fa-sort icon'></p><p class='title'>"+ title +"</p><p class='icon remove fa fa-times'></p></li>" );
 						if( !videosCued ) playNextVideo();
 						else {
 							showSubTitle( $( "#playlist>li" ).first().attr( "title" ) );
 							if( options.storePlaylist ) storePlaylist();
 						}
-					}
+					});
 				});
 			}
 
@@ -538,6 +559,12 @@
 				$( "#playlist" ).perfectScrollbar( "update" );
 			}
 			
+			
+			$( "#scale" ).on( "click", function() {
+				$( this ).toggleClass( "fa-expand fa-compress" );
+				$( "#player" ).toggleClass( "fill" );
+			});
+			
 			function showProgressBar( time ) {
 				// use time supplied or get the time from the youtube player
 				time = ( typeof time == "undefined" ) ? youtube.getCurrentTime() : time;
@@ -622,10 +649,7 @@
 				if( typeof( sessionStorage ) !== "undefined" ) {
 					var playlist = JSON.parse( sessionStorage.getItem( location.pathname.split("/")[2] ) );
 					if( playlist ) {
-						playlist.forEach( function( item ) {
-							// NEEDS FIX: this function contains $.getJSON the variable duration of which messes up the order of the elements in the playlist
-							cueVideo( item, {storePlaylist: false} );
-						});
+						cueVideo( playlist, {storePlaylist: false} );
 					}
 				}
 			}
