@@ -3,18 +3,23 @@
 	The server generates a unique room id when a user connects and allows the remotes to send data to the screen(s).
 */
 
-var express = require( "express" ),
-	app = express(),
-	server = require( "http" ).Server( app ),
-	io = require( "socket.io" )( server ),
-	roomIdLength = 3,
-	roomIdRegex = "[a-z0-9]{"+roomIdLength+"}";
+var express = require( "express" );
+var mustache = require('mustache-express');
+var app = express();
+var server = require( "http" ).Server( app );
+var io = require( "socket.io" )( server );
+var roomIdLength = 3;
+var roomIdRegex = "[a-z0-9]{"+roomIdLength+"}";
 
 server.listen( 1337 );
 console.log( "server started on port 1337" );
 
 // Serve static files
+app.use( express.static( __dirname + "/views" ) );
 app.use( express.static( __dirname + "/static" ) );
+
+// Use mustache to render html 
+app.engine( "html", mustache() );
 
 // Show room select/create screen
 app.get( "/", function ( req, res ) {
@@ -25,23 +30,28 @@ app.get( "/", function ( req, res ) {
 
 // Show about page
 app.get( "/about", function ( req, res ) {
-	res.sendFile( __dirname + "/about.html" );
+	res.sendFile( "about.html" );
 });
 
 // Show public screen
 app.get( "/room/:room("+roomIdRegex+")", function ( req, res ) {
-		res.sendFile( __dirname + "/screen.html" );
+	res.render( "screen.html", {room: req.params.room} );
 });
 
 // Show remote screen
 app.get( "/add/:room("+roomIdRegex+")", function ( req, res ) {
-	res.sendFile( __dirname + "/remote.html" );
+	res.render( "remote.html", {room: req.params.room} );
 });
 
 // Communicate with clients
 io.on( "connection", function ( socket ) {
-	socket.room = socket.request.headers.referer.replace( "http://"+socket.request.headers.host+"/", "" ).split("/")[1];
-	socket.join( socket.room );
+	
+	socket.emit( "requestRegisterRoom" );
+	
+	socket.on( "registerRoom", function( room ) {
+		socket.room = room;
+		socket.join( socket.room );
+	});
 	
 	socket.on( "cueVideo", function ( id ) {
 		socket.broadcast.to( socket.room ).emit( "cueVideo",  id );
