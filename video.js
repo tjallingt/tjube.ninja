@@ -2,7 +2,7 @@
 	Node server for Tjube.Ninja.
 	The server generates a unique room id when a user connects and allows the remotes to send data to the screen(s).
 */
-
+var PORT = 1337;
 var express = require( "express" );
 var mustache = require('mustache-express');
 var app = express();
@@ -11,8 +11,8 @@ var io = require( "socket.io" )( server );
 var roomIdLength = 3;
 var roomIdRegex = "[a-z0-9]{"+roomIdLength+"}";
 
-server.listen( 1337 );
-console.log( "server started on port 1337" );
+server.listen( PORT );
+console.log( "server started on port " + PORT );
 
 // Serve static files
 app.use( express.static( __dirname + "/views" ) );
@@ -30,7 +30,7 @@ app.get( "/", function ( req, res ) {
 
 // Show about page
 app.get( "/about", function ( req, res ) {
-	res.sendFile( "about.html" );
+	res.render( "about.html", {} );
 });
 
 // Show public screen
