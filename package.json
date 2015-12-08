@@ -4,6 +4,7 @@
   "description": "A simple party video player that anyone can add videos to.",
   "main": "video.js",
   "dependencies": {
+    "body-parser": "^1.14.1",
     "express": "^4.11.2",
     "mustache-express": "^1.2.1",
     "socket.io": "^1.3.3"

@@ -4,7 +4,8 @@
 */
 var PORT = 1337;
 var express = require( "express" );
-var mustache = require('mustache-express');
+var bodyParser = require( "body-parser" );
+var mustache = require( "mustache-express" );
 var app = express();
 var server = require( "http" ).Server( app );
 var io = require( "socket.io" )( server );
@@ -20,6 +21,9 @@ app.use( express.static( __dirname + "/static" ) );
 
 // Use mustache to render html 
 app.engine( "html", mustache() );
+
+// parse body as json
+app.use( bodyParser.json() );
 
 // Show room select/create screen
 app.get( "/", function ( req, res ) {
@@ -43,6 +47,14 @@ app.get( "/add/:room("+roomIdRegex+")", function ( req, res ) {
 	res.render( "remote.html", {room: req.params.room} );
 });
 
+// Add video api
+app.post( "/add/:room("+roomIdRegex+")", function ( req, res ) {
+	if( req.body ) {
+		io.to( req.params.room ).emit( "cueVideo", req.body.id );
+		res.json({status:"ok"});
+	} 
+});
+
 // Communicate with clients
 io.on( "connection", function ( socket ) {
 	
@@ -54,7 +66,7 @@ io.on( "connection", function ( socket ) {
 	});
 	
 	socket.on( "cueVideo", function ( id ) {
-		socket.broadcast.to( socket.room ).emit( "cueVideo",  id );
+		socket.broadcast.to( socket.room ).emit( "cueVideo", id );
 		socket.emit( "addedVideo",  id );
 	});
 });
